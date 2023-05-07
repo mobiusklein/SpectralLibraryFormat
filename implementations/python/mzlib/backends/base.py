@@ -4,7 +4,7 @@ import enum
 import logging
 import warnings
 
-from typing import Any, Callable, Dict, Iterable, Union, List, Type, Iterator
+from typing import Any, Callable, ClassVar, Dict, Iterable, Optional, Tuple, Union, List, Type, Iterator
 from pathlib import Path
 
 
@@ -53,7 +53,10 @@ class SubclassRegisteringMetaclass(type):
 
         file_extension = attrs.get("file_format")
         if file_extension is not None:
-            new_type._file_extension_to_implementation[file_extension] = new_type
+            if not isinstance(file_extension, tuple):
+                file_extension = (file_extension, )
+            for file_ext in file_extension:
+                new_type._file_extension_to_implementation[file_ext] = new_type
 
         format_name = attrs.get("format_name")
         if format_name is not None:
@@ -70,7 +73,7 @@ class SpectralLibraryBackendBase(AttributedEntity, _VocabularyResolverMixin, met
     """A base class for all spectral library formats.
 
     """
-    file_format = None
+    file_format: ClassVar[Optional[Union[str, Tuple[str]]]] = None
 
     _file_extension_to_implementation: Dict[str, Type['SpectralLibraryBackendBase']] = {}
     _format_name_to_implementation: Dict[str, Type['SpectralLibraryBackendBase']] = {}

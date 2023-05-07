@@ -8,7 +8,7 @@ from .common import datafile
 
 class TestLibrarySemanticValidator(unittest.TestCase):
     def open_library(self):
-        test_file = datafile("chinese_hamster_hcd_selected_head.mzlb.txt")
+        test_file = datafile("chinese_hamster_hcd_selected_head.mzlib.txt")
         library = SpectrumLibrary(filename=test_file)
         return library
 

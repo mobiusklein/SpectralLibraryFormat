@@ -42,7 +42,7 @@ FORMAT_VERSION_ACC = FORMAT_VERSION_TERM.split("|")[0]
 
 
 class JSONSpectralLibrary(SpectralLibraryBackendBase):
-    file_format = "mzlb.json"
+    file_format = ("mzlib.json", "mzlb.json")
     format_name = "json"
 
     def __init__(self, filename, index_type=None, read_metadata=True):
@@ -223,7 +223,7 @@ class JSONSpectralLibrary(SpectralLibraryBackendBase):
 
 
 class JSONSpectralLibraryWriter(SpectralLibraryWriterBase):
-    file_format = "mzlb.json"
+    file_format = "mzlib.json"
     format_name = "json"
     default_version = '1.0'
 

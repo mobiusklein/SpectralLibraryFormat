@@ -83,7 +83,7 @@ def _is_header_line(line: str) -> bool:
 
 
 class TextSpectralLibrary(_PlainTextSpectralLibraryBackendBase):
-    file_format: ClassVar[str] = "mzlb.txt"
+    file_format: ClassVar[str] = ("mzlib.txt", "mzlb.txt")
     format_name: ClassVar[str] = "text"
 
     @classmethod
@@ -552,7 +552,7 @@ class TextSpectralLibrary(_PlainTextSpectralLibraryBackendBase):
 
 
 class TextSpectralLibraryWriter(SpectralLibraryWriterBase):
-    file_format = "mzlb.txt"
+    file_format = ("mzlib.txt", "mzlb.txt")
     format_name = "text"
     default_version = '1.0'
 

@@ -8,11 +8,11 @@ from mzlib.index import MemoryIndex, SQLIndex
 from .common import datafile
 
 class IndexBehaviorBase(object):
-    test_file = datafile("chinese_hamster_hcd_selected_head.mzlb.txt")
+    test_file = datafile("chinese_hamster_hcd_selected_head.mzlib.txt")
     index_cls = None
 
     def make_dir(self):
-        dirname = tempfile.mkdtemp("_test", "mzlb_")
+        dirname = tempfile.mkdtemp("_test", "mzlib_")
         return dirname
 
     def _open(self):
