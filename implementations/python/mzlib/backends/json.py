@@ -1,3 +1,4 @@
+"""Read mzSpecLib JSON Format"""
 import io
 import json
 import logging

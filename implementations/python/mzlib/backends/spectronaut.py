@@ -1,3 +1,5 @@
+"""Reader for Biognosys Spectronaut TSV spectral libraries"""
+
 import json
 import os
 
@@ -72,6 +74,8 @@ def _parse_value(value: str) -> Union[float, int, str, bool]:
 
 
 class SpectronautTSVSpectralLibrary(_CSVSpectralLibraryBackendBase):
+    """Read Spectronaut TSV spectral libraries."""
+
     format_name = "spectronaut.tsv"
 
     _custom_spectrum_keys = [

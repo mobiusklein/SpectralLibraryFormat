@@ -1,3 +1,4 @@
+"""Read mzSpecLib Text Format"""
 import re
 import os
 import io
@@ -463,13 +464,14 @@ class TextSpectralLibrary(_PlainTextSpectralLibraryBackendBase):
                     # We found a single attribute
                     if match is not None:
                         d = match.groupdict()
+                        self._prepare_attribute_dict(d)
                         # If we're in an attribute set, store it in the attribute set
                         if state == _LibraryParserStateEnum.attribute_sets:
                             current_attribute_set.add_attribute(
-                                d['term'], try_cast(d['value']))
+                                d['term'], d['value'])
                         else: # Otherwise store it in the library level attributes
                             attributes.add_attribute(
-                                d['term'], try_cast(d['value']))
+                                d['term'], d['value'])
 
                         line = stream.readline()
                         # nbytes += len(line)
@@ -480,15 +482,16 @@ class TextSpectralLibrary(_PlainTextSpectralLibraryBackendBase):
                         match = grouped_key_value_term_pattern.match(line)
                         if match is not None:
                             d = match.groupdict()
+                            self._prepare_attribute_dict(d)
                             # If we're in an attribute set, store it in the attribute
                             # set
                             if state == _LibraryParserStateEnum.attribute_sets:
                                 current_attribute_set.add_attribute(
-                                    d['term'], try_cast(d['value']), d['group_id'])
+                                    d['term'], d['value'], d['group_id'])
                                 current_attribute_set.group_counter = int(d['group_id'])
                             else:  # Otherwise store it in the library level attributes
                                 attributes.add_attribute(
-                                    d['term'], try_cast(d['value']), d['group_id'])
+                                    d['term'], d['value'], d['group_id'])
                                 attributes.group_counter = int(d['group_id'])
 
                             line = stream.readline()
@@ -697,14 +700,14 @@ class TextSpectralLibrary(_PlainTextSpectralLibraryBackendBase):
                 else:
                     raise ValueError(f"Cannot define attribute sets for {scope.state}")
                 return attr_set
-            attr = Attribute(d["term"], try_cast(d["value"]))
+            attr = Attribute(d["term"], d["value"])
             return attr
         elif line.startswith("["):
             match = grouped_key_value_term_pattern.match(line)
             if match is not None:
                 d = match.groupdict()
                 self._prepare_attribute_dict(d)
-                attr = Attribute(d['term'], try_cast(d['value']), d['group_id'])
+                attr = Attribute(d['term'], d['value'], d['group_id'])
                 return attr
             else:
                 raise ValueError(f"Malformed grouped attribute {line}{line_number_message()}")

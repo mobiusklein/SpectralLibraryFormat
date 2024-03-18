@@ -1,3 +1,4 @@
+"""A set of base types, functions and constants for implementing spectral library formats."""
 import io
 import csv
 import enum

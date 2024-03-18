@@ -1,3 +1,8 @@
+"""
+Read BiblioSpec 2 SQLite3 spectral libraries.
+
+For more information, see `BiblioSpec's website <https://skyline.ms/project/home/software/BiblioSpec/begin.view>`_.
+"""
 import sqlite3
 import zlib
 from dataclasses import dataclass
@@ -19,11 +24,13 @@ from mzlib.index.base import IndexBase
 
 
 class BibliospecBase:
+    """Minimal base class for interacting with BiblioSpec 2 libraries"""
+
     connection: sqlite3.Connection
 
     def _correct_modifications_in_sequence(self, row: Mapping) -> proforma.ProForma:
         """
-        Correct the modifications in Bibliospec's modified peptide sequence.
+        Correct the modifications in BiblioSpec's modified peptide sequence.
 
         Bibliospec only stores modifications as delta masses.
         """
@@ -40,6 +47,8 @@ class BibliospecBase:
 
 @dataclass
 class BlibIndexRecord:
+    """An index record read from a BiblioSpec 2 spectral library"""
+
     number: int
     precursor_mz: float
     precursor_charge: int
@@ -47,6 +56,8 @@ class BlibIndexRecord:
 
 
 class BlibIndex(BibliospecBase, IndexBase):
+    """An index implementation backed by the BiblioSpec 2 SQLite3 database"""
+
     connection: sqlite3.Connection
 
     def __init__(self, connection):
@@ -79,7 +90,7 @@ class BlibIndex(BibliospecBase, IndexBase):
 
 
 class BibliospecSpectralLibrary(BibliospecBase, SpectralLibraryBackendBase):
-    """Read Bibliospec 2 SQLite3 spectral library files."""
+    """Read BiblioSpec 2 SQLite3 spectral library files."""
 
     connection: sqlite3.Connection
 

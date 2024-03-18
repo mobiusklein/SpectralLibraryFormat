@@ -1,3 +1,10 @@
+"""
+Read NIST MSP formats.
+
+There are an uncountable number of dialects of MSP. This library attempts to
+cover a representative subset from the NIST and some found in the wild. If you
+encounter an MSP file that does not parse properly, please report it.
+"""
 import re
 import io
 import os
@@ -603,9 +610,11 @@ def collision_energy_handler(key: str, value: str, container: Attributed) -> boo
     if isinstance(value, str):
         if "NCE" in value:
             return normalized_collision_energy_handler(key, value, container)
-        match = re.match(r"([\d\.]+)", value)
+        match = re.match(r"([\d\.]+)(:?eV|EV|ev|Ev)?", value.strip('"'))
         if match is not None:
             value = try_cast(match.group(1))
+        else:
+            warnings.warn(f"Failed to parse {value} for {key} in collision_energy_handler")
     if value is not None:
         group_identifier = container.get_next_group_identifier()
         container.add_attribute(
@@ -636,26 +645,30 @@ def normalized_collision_energy_handler(key: str, value: str, container: Attribu
 @msp_spectrum_attribute_handler.add
 @FunctionAttributeHandler.wraps("RT", "rettime", "retentiontime", "rtinseconds")
 def rt_handler(key, value, container) -> bool:
-    match = re.match(r"([\d\.]+)\s*(\D*)",
-                     value)
-    if match is not None:
-        if match.group(2):
-            container.add_attribute(
-                "ERROR", f"Need more RT parsing code to handle this value")
-            return False
-        else:
-            group_identifier = container.get_next_group_identifier()
-            container.add_attribute(
-                "MS:1000894|retention time", try_cast(match.group(1)), group_identifier)
-            #### If the value is greater than 250, assume it must be seconds
-            if float(match.group(1)) > 250 or key.lower() == 'rtinseconds':
+    if not isinstance(value, str):
+        container.add_attribute("MS:1000894|retention time", try_cast(value))
+        return True
+    else:
+        match = re.match(r"([\d\.]+)\s*(\D*)",
+                        value)
+        if match is not None:
+            if match.group(2):
                 container.add_attribute(
-                    "UO:0000000|unit", "UO:0000010|second", group_identifier)
-            #### Although normally assume minutes
+                    "ERROR", f"Need more RT parsing code to handle this value")
+                return False
             else:
+                group_identifier = container.get_next_group_identifier()
                 container.add_attribute(
-                    "UO:0000000|unit", "UO:0000031|minute", group_identifier)
-            return True
+                    "MS:1000894|retention time", try_cast(match.group(1)), group_identifier)
+                #### If the value is greater than 250, assume it must be seconds
+                if float(match.group(1)) > 250 or key.lower() == 'rtinseconds':
+                    container.add_attribute(
+                        "UO:0000000|unit", "UO:0000010|second", group_identifier)
+                #### Although normally assume minutes
+                else:
+                    container.add_attribute(
+                        "UO:0000000|unit", "UO:0000031|minute", group_identifier)
+                return True
     return False
 
 

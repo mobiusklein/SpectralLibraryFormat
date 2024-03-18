@@ -1,3 +1,4 @@
+"""Helper module for I/O operations"""
 import os
 import io
 import gzip
@@ -165,6 +166,9 @@ def open_stream(f: Union[io.IOBase, os.PathLike], mode='rt', buffer_size: Option
         raise NotImplementedError("Haven't implemented automatic output stream determination")
     try:
         fmode = f.mode
+        if isinstance(fmode, int):
+            # gzip.GzipFile uses ints in `mode`
+            fmode = 'b'
     except AttributeError:
         fmode = 'b'
     if "b" not in mode and "b" in fmode:

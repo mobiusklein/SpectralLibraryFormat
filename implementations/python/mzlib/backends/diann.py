@@ -1,3 +1,8 @@
+"""
+Read DIA-NN TSV spectral libraries.
+
+For more information, see `DIA-NN's website <https://github.com/vdemichev/DiaNN`_
+"""
 import json
 import os
 
@@ -40,6 +45,8 @@ def _parse_value(value: str) -> Union[float, int, str, bool]:
 
 
 class DIANNTSVSpectralLibrary(_CSVSpectralLibraryBackendBase):
+    """Reader for DIA-NN TSV spectral libraries."""
+
     format_name = "dia-nn.tsv"
 
     _custom_spectrum_keys = [

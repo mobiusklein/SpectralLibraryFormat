@@ -113,7 +113,7 @@ class ValidatorBase(_VocabularyResolverMixin):
     def apply_rules(self, obj: Attributed, path: str, identifier_path: Tuple) -> bool:
         raise NotImplementedError()
 
-    def check_attributes(self, obj: Attributed, path: str, identifer_path: Tuple) -> bool:
+    def check_attributes(self, obj: Attributed, path: str, identifier_path: Tuple) -> bool:
         valid: bool = True
         for attrib in obj.attributes:
             if attrib.key == "MS:1003276|other attribute value" or attrib.key == "MS:1003275|other attribute name":
@@ -122,7 +122,7 @@ class ValidatorBase(_VocabularyResolverMixin):
                 continue
             try:
                 term = self.find_term_for(attrib.key.split("|")[0])
-            except KeyError as err:
+            except KeyError:
                 logger.warn(f"Could not resolve term for {attrib.key}")
                 continue
             value_types = term.get('has_value_type')
@@ -138,12 +138,12 @@ class ValidatorBase(_VocabularyResolverMixin):
                     else:
                         value_term = None
                     if not value_term or not value_term.is_of_type(term):
-                        self.add_warning(obj, path, identifer_path, attrib.key, attrib.value, RequirementLevel.must,
+                        self.add_warning(obj, path, identifier_path, attrib.key, attrib.value, RequirementLevel.must,
                                          f"The value type of {attrib.key} must be a term derived from {attrib.key}, but found {attrib.value}")
                         valid = False
                         continue
                 else:
-                    self.add_warning(obj, path, identifer_path, attrib.key, attrib.value, RequirementLevel.must,
+                    self.add_warning(obj, path, identifier_path, attrib.key, attrib.value, RequirementLevel.must,
                                      f"The value type of {attrib.key} must be a term derived from {attrib.key}")
                     valid = False
                     continue
@@ -160,7 +160,7 @@ class ValidatorBase(_VocabularyResolverMixin):
                     elif _is_of_type(attrib, rel):
                         break
                 else:
-                    self.add_warning(obj, path, identifer_path, attrib.key, attrib.value, RequirementLevel.must,
+                    self.add_warning(obj, path, identifier_path, attrib.key, attrib.value, RequirementLevel.must,
                                      f"The value type of {attrib.key} must be a value of type {', '.join([rel.value_type.id for rel in value_types])}, but got {type(attrib.value)}")
                     valid = False
 
@@ -188,12 +188,12 @@ class ValidatorBase(_VocabularyResolverMixin):
                         if unit_acc == unit.accession or unit_name == unit.comment:
                             break
                     else:
-                        self.add_warning(obj, path, identifer_path, attrib.key, attrib.value, RequirementLevel.must,
+                        self.add_warning(obj, path, identifier_path, attrib.key, attrib.value, RequirementLevel.must,
                                         f"The attribute {attrib.key} must have a unit {', '.join([rel.accession + '|' + rel.comment for rel in units])}, but got {unit_acc}|{unit_name}")
                         valid = False
                 else:
                     if not term.id in DEFAULT_UNITS:
-                        self.add_warning(obj, path, identifer_path, attrib.key, attrib.value, RequirementLevel.must,
+                        self.add_warning(obj, path, identifier_path, attrib.key, attrib.value, RequirementLevel.must,
                                         f"The attribute {attrib.key} must have a unit {', '.join([rel.accession + '|' + rel.comment for rel in units])}, but none were found")
                         valid = False
 

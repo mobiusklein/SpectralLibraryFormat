@@ -1,3 +1,8 @@
+"""
+Read EncyclopeDIA SQLite3 spectral libraries.
+
+For more information, see `EncyclopeDIA's website <https://www.searlelab.org/software/encyclopedia/index.html>`_
+"""
 import sqlite3
 import zlib
 from dataclasses import dataclass
