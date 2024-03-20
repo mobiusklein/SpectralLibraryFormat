@@ -86,6 +86,7 @@ class SQLIndex(IndexBase):
 
     @classmethod
     def exists(cls, filename: Union[str, pathlib.Path, io.FileIO]):
+        """Check if an index file exists"""
         if not isinstance(filename, (str, pathlib.Path)):
             if not hasattr(filename, "name"):
                 raise TypeError(f"Could not coerce filename from {filename}")
@@ -98,11 +99,11 @@ class SQLIndex(IndexBase):
         self.filename = filename
         self.index_filename = self.filename + self.extension
         self._cache = None
-        self.connect()
+        self._connect()
         self._size = len(self)
         self._size_uncommitted = 0
 
-    def connect(self, create=None):
+    def _connect(self, create=None):
         filename = self.index_filename
         if os.path.exists(filename):
             if create:

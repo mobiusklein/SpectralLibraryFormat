@@ -3,7 +3,7 @@ import os
 import pathlib
 
 from typing import Optional, Type, List, Union
-from mzlib.attributes import AttributeManagedProperty
+from mzlib.attributes import AttributeManagedProperty, AttributeManager
 from mzlib.backends.base import LIBRARY_DESCRIPTION_TERM, LIBRARY_NAME_TERM, LIBRARY_URI_TERM, LIBRARY_VERSION_TERM
 from mzlib.cluster import SpectrumCluster
 
@@ -54,6 +54,9 @@ class SpectrumLibrary:
     uri = AttributeManagedProperty[str](LIBRARY_URI_TERM)
     library_version = AttributeManagedProperty[str](LIBRARY_VERSION_TERM)
 
+    _identifier = None
+    _filename = None
+
     def __init__(self, identifier=None, filename=None, format=None, index_type=None):
         """
         __init__ - SpectrumLibrary constructor
@@ -74,6 +77,11 @@ class SpectrumLibrary:
         self.index_type = index_type
         self._format = format
         self.filename = filename
+
+    def _init_from_identifier(self):
+        if os.path.exists(self.identifier) and self._filename is None and not self._backend_initialized():
+            # This in turn initializes the backend
+            self.filename = self.identifier
 
     def _init_from_filename(self, index_type: Type[IndexBase]=None):
         if index_type is None:
@@ -104,21 +112,25 @@ class SpectrumLibrary:
 
     @property
     def spectrum_attribute_sets(self):
+        """The spectrum attribute sets of the spectral library"""
         self._requires_backend()
         return self.backend.spectrum_attribute_sets
 
     @property
     def analyte_attribute_sets(self):
+        """The analyte attribute sets of the spectral library"""
         self._requires_backend()
         return self.backend.analyte_attribute_sets
 
     @property
     def interpretation_attribute_sets(self):
+        """The interpretation attribute sets of the spectral library"""
         self._requires_backend()
         return self.backend.interpretation_attribute_sets
 
     @property
     def cluster_attribute_sets(self):
+        """The spectrum cluster attribute sets of the spectral library"""
         self._requires_backend()
         return self.backend.cluster_attribute_sets
 
@@ -138,8 +150,8 @@ class SpectrumLibrary:
 
     #### Define getter/setter for attribute filename
     @property
-    def filename(self):
-        return(self._filename)
+    def filename(self) -> Optional[str]:
+        return self._filename
 
     @filename.setter
     def filename(self, filename):
@@ -153,13 +165,14 @@ class SpectrumLibrary:
         return self._format
 
     @property
-    def index(self):
+    def index(self) -> IndexBase:
         if self._backend_initialized():
             return self.backend.index
         return None
 
     @property
-    def attributes(self):
+    def attributes(self) -> AttributeManager:
+        """The library level attributes"""
         if self._backend_initialized():
             return self.backend.attributes
         return None
@@ -357,6 +370,7 @@ class SpectrumLibrary:
         return self.backend.has_attribute(key)
 
     def summarize_parsing_errors(self):
+        """Retrieve a free-form description of parsing errors"""
         return self.backend.summarize_parsing_errors()
 
 

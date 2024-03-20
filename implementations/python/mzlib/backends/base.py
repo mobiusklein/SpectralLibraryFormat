@@ -389,6 +389,7 @@ class SpectralLibraryBackendBase(AttributedEntity, _VocabularyResolverMixin, _Li
             raise ValueError(f"Could not map {attribute_set_type}")
 
     def summarize_parsing_errors(self) -> Dict:
+        """Retrieve a free-form description of parsing errors"""
         return {}
 
 
