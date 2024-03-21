@@ -39,6 +39,8 @@ DEFAULT_VERSION = '1.0'
 
 
 class AttributeSetTypes(enum.Enum):
+    """Attribute set type tags used as keys and section constants"""
+
     spectrum = enum.auto()
     analyte = enum.auto()
     interpretation = enum.auto()
@@ -50,6 +52,18 @@ class FormatInferenceFailure(ValueError):
 
 
 class SubclassRegisteringMetaclass(type):
+    """
+    A metaclass that registers instances instance types on the following attributes:
+        - :attr:`file_format`
+        - :attr:`format_name`
+
+    It will also create :attr:`_file_extension_to_implementation` on the instance type
+    if it does not already exist in the type's inheritance hierarchy.
+
+    This is meant to be used to automate registration of new backends so as soon as the
+    type is imported, it is registered.
+    """
+
     def __new__(mcs, name, parents, attrs):
         new_type = type.__new__(mcs, name, parents, attrs)
         if not hasattr(new_type, "_file_extension_to_implementation"):
@@ -70,7 +84,8 @@ class SubclassRegisteringMetaclass(type):
             attrs['format_name'] = file_extension
         return new_type
 
-    def type_for_format(cls, format_or_extension):
+    def type_for_format(cls, format_or_extension: str) -> Type:
+        """Get the implementing type for a specific format or file extension, if it exists"""
         return cls._file_extension_to_implementation.get(format_or_extension)
 
 
@@ -270,6 +285,35 @@ class SpectralLibraryBackendBase(AttributedEntity, _VocabularyResolverMixin, _Li
             if not interpretation.analytes:
                 for analyte in spectrum.analytes.values():
                     interpretation.add_analyte(analyte)
+
+    def _is_analyte_defined(self, analyte: Analyte) -> bool:
+        peptide_attr_root = self.find_term_for("MS:1003050")
+        molecular_attr_root = self.find_term_for("MS:1003033")
+        for attrib in analyte:
+            acc, _name = attrib.key.split("|")
+            term = self.find_term_for(acc)
+            if term.is_of_type(peptide_attr_root):
+                return True
+            if term.is_of_type(molecular_attr_root):
+                return True
+        return False
+
+    def _hoist_analyte_attributes_on_rejection(self, analyte: Analyte, spectrum: Spectrum):
+        ion_selection_root = self.find_term_for("MS:1000455")
+        attribute_groups_to_hoist = {}
+        for attrib in analyte:
+            acc, _name = attrib.key.split("|")
+            term = self.find_term_for(acc)
+            if attrib.group_id in attribute_groups_to_hoist:
+                attribute_groups_to_hoist[attrib.group_id].append(attrib)
+            if term.is_of_type(ion_selection_root):
+                if attrib.group_id is None:
+                    spectrum.add_attribute(attrib.key, attrib.value)
+                else:
+                    attribute_groups_to_hoist[attrib.group_id] = [attrib]
+
+        for group in attribute_groups_to_hoist.values():
+            spectrum.add_attribute_group(group)
 
     def get_spectrum(self, spectrum_number: int=None,
                      spectrum_name: str=None) -> Spectrum:

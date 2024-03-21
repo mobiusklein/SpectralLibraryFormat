@@ -21,7 +21,7 @@ from pyteomics import proforma
 
 from mzlib import annotation
 
-from mzlib.analyte import FIRST_ANALYTE_KEY, FIRST_INTERPRETATION_KEY, Analyte, ProteinDescription
+from mzlib.analyte import FIRST_ANALYTE_KEY, FIRST_INTERPRETATION_KEY, Analyte, Interpretation, ProteinDescription
 from mzlib.spectrum import Spectrum, SPECTRUM_NAME
 from mzlib.attributes import AttributeManager, AttributeSet, Attributed
 
@@ -78,6 +78,10 @@ class AttributeHandler:
         return key in self.keys
 
     def add_value(self, key: str, value: Any, container: Attributed):
+        if container.has_attribute(key):
+            existing = container.get_attribute(key)
+            if existing == value:
+                return
         container.add_attribute(key, value)
 
     def add_group(self, keys: List[str], values: List[Any], container: Attributed):
@@ -239,45 +243,71 @@ class DispatchingAttributeHandler(AttributeHandlerChain):
 
 
 
-analyte_terms = CaseInsensitiveDict({
-    "Charge": "MS:1000041|charge state",
-    "precursor_charge": "MS:1000041|charge state",
-    "precursorcharge": "MS:1000041|charge state",
-
-    "MW": "MS:1000224|molecular mass",
-    "total exact mass": "MS:1000224|molecular mass",
-    "ExactMass": "MS:1000224|molecular mass",
-    "exact_mass": "MS:1000224|molecular mass",
-    "exact mass": "MS:1000224|molecular mass",
-    "molecular formula": "MS:1000866|molecular formula",
-    "Formula": "MS:1000866|molecular formula",
-    "formula": "MS:1000866|molecular formula",
-    "SMILES": "MS:1000868|SMILES formula",
-    "InChIKey": "MS:1002894|InChIKey",
-    # "Theo_mz_diff": "MS:1003209|monoisotopic m/z deviation",
-    "Scan": {
+analyte_terms = CaseInsensitiveDict(
+    {
+        "Charge": "MS:1000041|charge state",
+        "precursor_charge": "MS:1000041|charge state",
+        "precursorcharge": "MS:1000041|charge state",
+        "MW": "MS:1000224|molecular mass",
+        "total exact mass": "MS:1000224|molecular mass",
+        "ExactMass": "MS:1000224|molecular mass",
+        "exact_mass": "MS:1000224|molecular mass",
+        "exact mass": "MS:1000224|molecular mass",
+        "molecular formula": "MS:1000866|molecular formula",
+        "Formula": "MS:1000866|molecular formula",
+        "formula": "MS:1000866|molecular formula",
+        "SMILES": "MS:1000868|SMILES formula",
+        "InChIKey": "MS:1002894|InChIKey",
+        "InChI": "MS:1003403|InChI",
+        "Precursor_type": "MS:1002813|adduct ion formula",
+        # "Theo_mz_diff": "MS:1003209|monoisotopic m/z deviation",
+        "Scan": {
+            "Mods": PEPTIDE_MODIFICATION_TERM,
+            "Naa": "MS:1003043|number of residues",
+        },
+        "Pep": {
+            "Tryptic": [
+                ["MS:1003048|number of enzymatic termini", 2],
+                ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"],
+            ],
+            "SemiTryptic": [
+                ["MS:1003048|number of enzymatic termini", 1],
+                ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"],
+            ],
+            "N-Semitryptic": [
+                ["MS:1003048|number of enzymatic termini", 1],
+                ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"],
+            ],
+            "C-Semitryptic": [
+                ["MS:1003048|number of enzymatic termini", 1],
+                ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"],
+            ],
+            "Tryptic/miss_good_confirmed": [
+                ["MS:1003048|number of enzymatic termini", 2],
+                ["MS:1003044|number of missed cleavages", "0"],
+                ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"],
+            ],
+            "Tryptic/miss_bad_confirmed": [
+                ["MS:1003048|number of enzymatic termini", 2],
+                ["MS:1003044|number of missed cleavages", ">0"],
+                ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"],
+            ],
+        },
+        "MC": "MS:1003044|number of missed cleavages",
         "Mods": PEPTIDE_MODIFICATION_TERM,
         "Naa": "MS:1003043|number of residues",
-    },
-    "Pep": {
-        "Tryptic": [["MS:1003048|number of enzymatic termini", 2], ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"]],
-        "SemiTryptic": [["MS:1003048|number of enzymatic termini", 1], ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"]],
-        "N-Semitryptic": [["MS:1003048|number of enzymatic termini", 1], ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"]],
-        "C-Semitryptic": [["MS:1003048|number of enzymatic termini", 1], ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"]],
-        "Tryptic/miss_good_confirmed": [["MS:1003048|number of enzymatic termini", 2],
-                                        ["MS:1003044|number of missed cleavages", "0"],
-                                        ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"]],
-        "Tryptic/miss_bad_confirmed": [["MS:1003048|number of enzymatic termini", 2],
-                                        ["MS:1003044|number of missed cleavages", ">0"],
-                                        ["MS:1001045|cleavage agent name", "MS:1001251|Trypsin"]],
-        },
-    "MC": "MS:1003044|number of missed cleavages",
-    "Mods": PEPTIDE_MODIFICATION_TERM,
-    "Naa": "MS:1003043|number of residues",
-    "PrecursorMonoisoMZ": "MS:1003208|experimental precursor monoisotopic m/z",
-    "Mz_exact": "MS:1003208|experimental precursor monoisotopic m/z",
-    "Mz_av": "MS:1003054|theoretical average m/z",
-})
+        "PrecursorMonoisoMZ": "MS:1003208|experimental precursor monoisotopic m/z",
+        "Parent": "MS:1003208|experimental precursor monoisotopic m/z",
+        "ObservedPrecursorMZ": "MS:1003208|experimental precursor monoisotopic m/z",
+        "PrecursorMZ": "MS:1003208|experimental precursor monoisotopic m/z",
+        "PRECURSORMZ": "MS:1003208|experimental precursor monoisotopic m/z",
+        "precursor": "MS:1003208|experimental precursor monoisotopic m/z",
+        "precursor_mass": "MS:1003208|experimental precursor monoisotopic m/z",
+        "precursormass": "MS:1003208|experimental precursor monoisotopic m/z",
+        "Mz_exact": "MS:1003208|experimental precursor monoisotopic m/z",
+        "Mz_av": "MS:1003054|theoretical average m/z",
+    }
+)
 
 
 _HCD = ["MS:1000044|dissociation method", "MS:1000422|beam-type collision-induced dissociation"]
@@ -292,14 +322,6 @@ instrument_dispatch = CaseInsensitiveDict({
 
 
 other_terms = CaseInsensitiveDict({
-    "Parent": "MS:1003208|experimental precursor monoisotopic m/z",
-    "ObservedPrecursorMZ": "MS:1003208|experimental precursor monoisotopic m/z",
-    "PrecursorMZ": "MS:1003208|experimental precursor monoisotopic m/z",
-    "PRECURSORMZ": "MS:1003208|experimental precursor monoisotopic m/z",
-    "precursor": "MS:1003208|experimental precursor monoisotopic m/z",
-    "precursor_mass": "MS:1003208|experimental precursor monoisotopic m/z",
-    "precursormass": "MS:1003208|experimental precursor monoisotopic m/z",
-
     "Single": ["MS:1003065|spectrum aggregation type", "MS:1003066|singleton spectrum"],
     "Consensus": ["MS:1003065|spectrum aggregation type", "MS:1003067|consensus spectrum"],
     "Inst": instrument_dispatch,
@@ -561,17 +583,17 @@ def ms_level_handler(key: str, value: str, container: Attributed) -> bool:
 
 
 @msp_spectrum_attribute_handler.add
-@FunctionAttributeHandler.wraps("ionmode", "ion_mode", "ionization mode", "IONMODE", "Ion_mode")
+@FunctionAttributeHandler.wraps("ionmode", "ion_mode", "ionization mode", "IONMODE", "Ion_mode", "MS_mode")
 def polarity_handler(key: str, value: str, container: Attributed) -> bool:
     polarity_term = "MS:1000465|scan polarity"
     positive = "MS:1000130|positive scan"
     negative = "MS:1000129|negative scan"
 
     if isinstance(value, str):
-        value = value.lower()
-        if value == 'positive':
+        value = value.lower().strip('"\'')
+        if value == 'positive' or value == "+":
             value = positive
-        elif value == 'negative':
+        elif value == 'negative' or value == "-":
             value = negative
         else:
             raise ValueError(f"Can't infer scan polarity from {value}")
@@ -1389,7 +1411,11 @@ class MSPSpectralLibrary(_PlainTextSpectralLibraryBackendBase):
 
         self._complete_analyte(analyte)
 
-        if analyte:
+        if not self._is_analyte_defined(analyte):
+            self._hoist_analyte_attributes_on_rejection(analyte, spectrum)
+            analyte.clear()
+            spectrum.remove_analyte(analyte.id)
+        elif analyte:
             spectrum.add_analyte(analyte)
             interpretation.add_analyte(analyte)
             spectrum.add_interpretation(interpretation)

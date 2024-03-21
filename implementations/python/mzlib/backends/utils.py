@@ -2,6 +2,7 @@
 import os
 import io
 import gzip
+import logging
 
 from collections import deque
 from urllib import parse as urlparse
@@ -11,6 +12,8 @@ DEFAULT_BUFFER_SIZE = int(2e6)
 GZIP_MAGIC = b'\037\213'
 
 GzipFile = gzip.GzipFile
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 try:
     # Fast random acces with Gzip compatibility
@@ -118,6 +121,7 @@ def test_gzipped(f) -> bool:
         f = io.open(f, 'rb')
     try:
         current = f.tell()
+        assert current >= 0
     except OSError:
         return False
     f.seek(0)
@@ -143,7 +147,32 @@ def starts_with_gz_magic(bytestring):
     return bytestring.startswith(GZIP_MAGIC)
 
 
-def open_stream(f: Union[io.IOBase, os.PathLike], mode='rt', buffer_size: Optional[int]=None, encoding: Optional[str]='utf8', newline=None):
+class _NotClosingWrapper:
+    stream: io.BufferedIOBase
+
+    def __init__(self, stream) -> None:
+        self.stream = stream
+
+    def __getattr__(self, attrib: str):
+        attr = getattr(self.stream, attrib)
+        return attr
+
+    def close(self):
+        logger.debug("Resetting stream handle %r", self.stream)
+        if self.stream.seekable():
+            self.stream.seek(0)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        logger.debug("Resetting stream handle %r", self.stream)
+        if self.stream.seekable():
+            self.stream.seek(0)
+        return
+
+
+def open_stream(f: Union[io.IOBase, os.PathLike], mode='rt', buffer_size: Optional[int]=None, encoding: Optional[str]='utf8', newline=None, closing=False):
     """
     Select the file reading type for the given path or stream.
 
@@ -151,12 +180,21 @@ def open_stream(f: Union[io.IOBase, os.PathLike], mode='rt', buffer_size: Option
     """
     if buffer_size is None:
         buffer_size = DEFAULT_BUFFER_SIZE
+    is_stream = False
+    offset = None
     if 'r' in mode:
         if not hasattr(f, 'read'):
             f = io.open(f, 'rb')
+        else:
+            is_stream = True
+            offset = f.tell()
         if not isinstance(f, io.BufferedReader) and not isinstance(f, io.TextIOWrapper):
+            if not closing and is_stream:
+                f = _NotClosingWrapper(f)
             buffered_reader = io.BufferedReader(f, buffer_size)
         else:
+            if not closing and is_stream:
+                f = _NotClosingWrapper(f)
             buffered_reader = f
         if test_gzipped(buffered_reader):
             handle = GzipFile(fileobj=buffered_reader, mode='rb')
@@ -173,6 +211,9 @@ def open_stream(f: Union[io.IOBase, os.PathLike], mode='rt', buffer_size: Option
         fmode = 'b'
     if "b" not in mode and "b" in fmode:
         handle = io.TextIOWrapper(handle, encoding=encoding, newline=newline)
+    if is_stream and handle.seekable():
+        if offset:
+            handle.seek(offset)
     return handle
 
 

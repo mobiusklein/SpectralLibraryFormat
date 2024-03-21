@@ -179,6 +179,7 @@ class AttributeManager(object):
                 self.group_dict[group_identifier] = [index]
 
     def add_attribute_group(self, attributes: List[Union[Attribute, Tuple[str, Any]]]):
+        """Add a collection of connected attributes that are part of a single group"""
         group_id = self.get_next_group_identifier()
         for attr in attributes:
             if isinstance(attr, Attribute):
@@ -233,6 +234,12 @@ class AttributeManager(object):
             return self.attributes[idx][1]
 
     def get_attribute_group(self, group_identifier: str) -> List[Any]:
+        """
+        Get all the members of a specified attribute group
+
+        .. note::
+
+        """
         result = []
         group_identifier = str(group_identifier)
         for k, indices_and_groups in self.attribute_dict.items():
